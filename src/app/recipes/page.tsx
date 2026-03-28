@@ -1,0 +1,116 @@
+export const dynamic = "force-dynamic";
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { connectDB } from "@/lib/mongodb";
+import Recipe from "@/models/Recipe";
+import type { IRecipe } from "@/types";
+import { RecipeGrid } from "@/components/recipes/RecipeGrid";
+import { RecipeFilters } from "@/components/recipes/RecipeFilters";
+import { RecipePagination } from "@/components/recipes/RecipePagination";
+import { RecipeGridSkeleton } from "@/components/common/LoadingSpinner";
+import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "Recipes" };
+
+interface PageProps {
+  searchParams: Promise<{
+    search?: string;
+    category?: string;
+    difficulty?: string;
+    maxTime?: string;
+    tags?: string;
+    suitableFor?: string;
+    page?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }>;
+}
+
+async function fetchRecipes(params: Awaited<PageProps["searchParams"]>) {
+  await connectDB();
+
+  const search = params.search ?? "";
+  const category = params.category ?? "";
+  const difficulty = params.difficulty ?? "";
+  const maxTime = params.maxTime;
+  const tags = params.tags ?? "";
+  const suitableFor = params.suitableFor ?? "";
+  const page = Math.max(1, parseInt(params.page ?? "1", 10));
+  const limit = 12;
+  const sortBy = params.sortBy ?? "createdAt";
+  const sortOrder = params.sortOrder === "asc" ? 1 : -1;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const query: Record<string, any> = {};
+  if (search) query.$text = { $search: search };
+  if (category) query.categories = { $in: [category] };
+  if (difficulty) query.difficulty = difficulty;
+  if (maxTime) query.estimatedTime = { $lte: parseInt(maxTime, 10) };
+  if (tags) query.tags = { $in: tags.split(",").map((t) => t.trim()) };
+  if (suitableFor) query.suitableFor = { $in: [suitableFor] };
+
+  const [recipes, total] = await Promise.all([
+    Recipe.find(query)
+      .sort({ [sortBy]: sortOrder })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    Recipe.countDocuments(query),
+  ]);
+
+  return {
+    recipes: JSON.parse(JSON.stringify(recipes)) as IRecipe[],
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
+}
+
+export default async function RecipesPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const { recipes, total, page, totalPages } = await fetchRecipes(params);
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-display font-bold">Recipes</h1>
+          <p className="text-muted-foreground mt-1">
+            {total > 0 ? `${total} recipe${total !== 1 ? "s" : ""} in your collection` : "Start building your recipe collection"}
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/recipes/new">
+            <Plus className="h-4 w-4 mr-1" />
+            New Recipe
+          </Link>
+        </Button>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Sidebar filters */}
+        <aside className="lg:w-64 shrink-0">
+          <div className="rounded-2xl border bg-card p-5 sticky top-20">
+            <p className="text-sm font-semibold mb-4">Filter Recipes</p>
+            <Suspense>
+              <RecipeFilters />
+            </Suspense>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 space-y-6">
+          <Suspense fallback={<RecipeGridSkeleton />}>
+            <RecipeGrid recipes={recipes} />
+          </Suspense>
+          <Suspense>
+            <RecipePagination page={page} totalPages={totalPages} total={total} />
+          </Suspense>
+        </div>
+      </div>
+    </div>
+  );
+}
