@@ -1,12 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Recipe from "@/models/Recipe";
-import { uploadImage } from "@/lib/cloudinary";
 import { uniqueSlug } from "@/lib/slugify";
 import { recipeSchema } from "@/lib/validations/recipe.schema";
-import Busboy from "busboy";
 
-export const config = { api: { bodyParser: false } };
+// POST /api/recipes — create new recipe
+// Body is JSON (image already uploaded directly to Cloudinary from the browser)
+export async function POST(req: NextRequest) {
+  await connectDB();
+
+  try {
+    const body = await req.json();
+
+    const { thumbnailUrl, thumbnailPublicId, ...rest } = body;
+
+    if (!thumbnailUrl || !thumbnailPublicId) {
+      return NextResponse.json({ error: "Thumbnail is required" }, { status: 400 });
+    }
+
+    const parsed = recipeSchema.safeParse(rest);
+    if (!parsed.success) {
+      return NextResponse.json({ errors: parsed.error.errors }, { status: 400 });
+    }
+
+    const slug = await uniqueSlug(parsed.data.title, async (s) => {
+      const exists = await Recipe.findOne({ slug: s });
+      return !!exists;
+    });
+
+    const recipe = await Recipe.create({
+      ...parsed.data,
+      thumbnail: { url: thumbnailUrl, publicId: thumbnailPublicId },
+      slug,
+    });
+
+    return NextResponse.json({ recipe }, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/recipes error:", err);
+    return NextResponse.json({ error: "Failed to create recipe" }, { status: 500 });
+  }
+}
 
 // GET /api/recipes — paginated, filtered list
 export async function GET(req: NextRequest) {
@@ -47,90 +80,5 @@ export async function GET(req: NextRequest) {
     total,
     page,
     totalPages: Math.ceil(total / limit),
-  });
-}
-
-// POST /api/recipes — create new recipe (multipart/form-data)
-export async function POST(req: NextRequest) {
-  await connectDB();
-
-  try {
-    const { fields, file } = await parseMultipart(req);
-
-    // Parse JSON fields
-    const data = {
-      title: fields.title,
-      description: fields.description,
-      ingredients: JSON.parse(fields.ingredients ?? "[]"),
-      steps: JSON.parse(fields.steps ?? "[]"),
-      estimatedTime: parseInt(fields.estimatedTime ?? "0", 10),
-      difficulty: fields.difficulty,
-      categories: JSON.parse(fields.categories ?? "[]"),
-      servings: parseInt(fields.servings ?? "1", 10),
-      tags: JSON.parse(fields.tags ?? "[]"),
-      suitableFor: JSON.parse(fields.suitableFor ?? "[]"),
-    };
-
-    const parsed = recipeSchema.safeParse(data);
-    if (!parsed.success) {
-      return NextResponse.json({ errors: parsed.error.errors }, { status: 400 });
-    }
-
-    if (!file) {
-      return NextResponse.json({ error: "Thumbnail image is required" }, { status: 400 });
-    }
-
-    const { url, publicId } = await uploadImage(file);
-
-    const slug = await uniqueSlug(parsed.data.title, async (s) => {
-      const exists = await Recipe.findOne({ slug: s });
-      return !!exists;
-    });
-
-    const recipe = await Recipe.create({
-      ...parsed.data,
-      thumbnail: { url, publicId },
-      slug,
-    });
-
-    return NextResponse.json({ recipe }, { status: 201 });
-  } catch (err) {
-    console.error("POST /api/recipes error:", err);
-    return NextResponse.json({ error: "Failed to create recipe" }, { status: 500 });
-  }
-}
-
-// Helper: parse multipart form data
-async function parseMultipart(req: NextRequest): Promise<{
-  fields: Record<string, string>;
-  file: Buffer | null;
-}> {
-  const chunks: Buffer[] = [];
-  const fields: Record<string, string> = {};
-
-  const contentType = req.headers.get("content-type") ?? "";
-  const body = await req.arrayBuffer();
-  const bodyBuffer = Buffer.from(body);
-
-  return new Promise((resolve, reject) => {
-    const busboy = Busboy({ headers: { "content-type": contentType } });
-    let fileBuffer: Buffer | null = null;
-
-    busboy.on("file", (_fieldname, stream) => {
-      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
-      stream.on("end", () => {
-        fileBuffer = Buffer.concat(chunks);
-      });
-    });
-
-    busboy.on("field", (name, value) => {
-      fields[name] = value;
-    });
-
-    busboy.on("finish", () => resolve({ fields, file: fileBuffer }));
-    busboy.on("error", reject);
-
-    busboy.write(bodyBuffer);
-    busboy.end();
   });
 }

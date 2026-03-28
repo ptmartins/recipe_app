@@ -81,6 +81,30 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
     setThumbnailPreview(URL.createObjectURL(file));
   };
 
+  const uploadToCloudinary = async (file: File): Promise<{ url: string; publicId: string }> => {
+    // Get a signed upload params from our API (keeps API secret server-side)
+    const sigRes = await fetch("/api/cloudinary-signature");
+    if (!sigRes.ok) throw new Error("Failed to get upload signature");
+    const { signature, timestamp, folder, cloudName, apiKey } = await sigRes.json();
+
+    // Upload directly to Cloudinary — bypasses Vercel's 4.5MB body limit
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("signature", signature);
+    formData.append("timestamp", timestamp);
+    formData.append("folder", folder);
+    formData.append("api_key", apiKey);
+    formData.append("transformation", "c_fill,w_1200,h_800,g_auto/f_auto,q_auto");
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: formData }
+    );
+    if (!uploadRes.ok) throw new Error("Image upload failed");
+    const uploaded = await uploadRes.json();
+    return { url: uploaded.secure_url, publicId: uploaded.public_id };
+  };
+
   const onSubmit = async (data: RecipeFormData) => {
     if (!recipe && !thumbnailFile) {
       toast({ title: "Photo required", description: "Please add a recipe photo.", variant: "destructive" });
@@ -89,30 +113,31 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
 
     setIsSubmitting(true);
     try {
-      const formData = new FormData();
-      if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
-      formData.append("title", data.title);
-      formData.append("description", data.description);
-      formData.append("ingredients", JSON.stringify(data.ingredients));
-      formData.append("steps", JSON.stringify(data.steps));
-      formData.append("estimatedTime", data.estimatedTime.toString());
-      formData.append("difficulty", data.difficulty);
-      formData.append("categories", JSON.stringify(data.categories));
-      formData.append("servings", data.servings.toString());
-      formData.append("tags", JSON.stringify(data.tags));
-      formData.append("suitableFor", JSON.stringify(data.suitableFor));
+      let thumbnailUrl = recipe?.thumbnail.url;
+      let thumbnailPublicId = recipe?.thumbnail.publicId;
+
+      // Upload image directly to Cloudinary if a new file was selected
+      if (thumbnailFile) {
+        const uploaded = await uploadToCloudinary(thumbnailFile);
+        thumbnailUrl = uploaded.url;
+        thumbnailPublicId = uploaded.publicId;
+      }
 
       const url = recipe ? `/api/recipes/${recipe._id}` : "/api/recipes";
       const method = recipe ? "PUT" : "POST";
 
-      const res = await fetch(url, { method, body: formData });
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, thumbnailUrl, thumbnailPublicId }),
+      });
       const result = await res.json();
 
       if (!res.ok) {
         throw new Error(result.error ?? "Failed to save recipe");
       }
 
-      toast({ title: recipe ? "Recipe updated!" : "Recipe created!", variant: "success" as "default" });
+      toast({ title: recipe ? "Recipe updated!" : "Recipe created!" });
       router.push(`/recipes/${result.recipe._id}`);
       router.refresh();
     } catch (err) {
@@ -410,7 +435,7 @@ export function RecipeForm({ recipe }: RecipeFormProps) {
           {isSubmitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              {recipe ? "Updating..." : "Creating..."}
+              {thumbnailFile ? "Uploading photo..." : recipe ? "Updating..." : "Creating..."}
             </>
           ) : (
             recipe ? "Update Recipe" : "Create Recipe"
