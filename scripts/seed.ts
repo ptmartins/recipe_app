@@ -5,8 +5,11 @@
  * Creates 15 sample recipes across various categories.
  * Requires MONGODB_URI in env or .env.local
  */
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import { createSlug } from "../src/lib/slugify";
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -27,6 +30,19 @@ const RecipeSchema = new mongoose.Schema({
   tags: [String], suitableFor: [String], slug: String,
 }, { timestamps: true });
 const Recipe = mongoose.models.Recipe ?? mongoose.model("Recipe", RecipeSchema);
+
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true, lowercase: true },
+  password: String,
+}, { timestamps: true });
+const User = mongoose.models.User ?? mongoose.model("User", UserSchema);
+
+const SEED_USER = {
+  name: "Admin",
+  email: "snitramordep@gmail.com",
+  password: "superadmin",
+};
 
 const SAMPLE_RECIPES = [
   {
@@ -344,6 +360,16 @@ async function seed() {
   console.log("🌱 Connecting to MongoDB...");
   await mongoose.connect(MONGODB_URI!);
   console.log("✅ Connected");
+
+  // Seed admin user
+  const existing = await User.findOne({ email: SEED_USER.email });
+  if (!existing) {
+    const hashed = await bcrypt.hash(SEED_USER.password, 10);
+    await User.create({ ...SEED_USER, password: hashed });
+    console.log(`✅ Admin user created: ${SEED_USER.email}`);
+  } else {
+    console.log(`ℹ️  Admin user already exists: ${SEED_USER.email}`);
+  }
 
   // Clear existing
   await Recipe.deleteMany({});

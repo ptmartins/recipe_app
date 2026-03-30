@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Clock, Users, ChefHat, Edit3, Trash2, ChevronLeft } from "lucide-react";
+import { Clock, Users, ChefHat, Edit3, ChevronLeft } from "lucide-react";
 import { connectDB } from "@/lib/mongodb";
 import Recipe from "@/models/Recipe";
 import type { IRecipe } from "@/types";
 import { formatTime, getDifficultyColor, getCategoryColor, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DeleteRecipeButton } from "./DeleteRecipeButton";
+import { auth } from "@/lib/auth";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -27,7 +28,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function RecipeDetailPage({ params }: PageProps) {
-  const { id } = await params;
+  const [{ id }, session] = await Promise.all([params, auth()]);
+  const isLoggedIn = !!session?.user;
+
   await connectDB();
   const raw = await Recipe.findById(id).lean();
   if (!raw) notFound();
@@ -70,16 +73,18 @@ export default async function RecipeDetailPage({ params }: PageProps) {
             <p className="mt-3 text-muted-foreground leading-relaxed">{recipe.description}</p>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2 shrink-0">
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/recipes/${id}/edit`}>
-                <Edit3 className="h-4 w-4 mr-1" />
-                Edit
-              </Link>
-            </Button>
-            <DeleteRecipeButton recipeId={id} />
-          </div>
+          {/* Actions — only visible when logged in */}
+          {isLoggedIn && (
+            <div className="flex gap-2 shrink-0">
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/recipes/${id}/edit`}>
+                  <Edit3 className="h-4 w-4 mr-1" />
+                  Edit
+                </Link>
+              </Button>
+              <DeleteRecipeButton recipeId={id} />
+            </div>
+          )}
         </div>
 
         {/* Meta stats */}

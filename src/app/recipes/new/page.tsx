@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { RecipeForm } from "@/components/recipes/RecipeForm";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "New Recipe" };
 
-export default function NewRecipePage() {
+export default async function NewRecipePage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
       <Button asChild variant="ghost" size="sm" className="mb-6 -ml-2">

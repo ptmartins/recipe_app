@@ -4,6 +4,7 @@ import Recipe from "@/models/Recipe";
 import Menu from "@/models/Menu";
 import { deleteImage } from "@/lib/cloudinary";
 import { recipeSchema } from "@/lib/validations/recipe.schema";
+import { auth } from "@/lib/auth";
 
 // GET /api/recipes/[id]
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -17,6 +18,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 // PUT /api/recipes/[id]
 // Body is JSON; if a new image was uploaded directly to Cloudinary, pass thumbnailUrl + thumbnailPublicId
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectDB();
   const { id } = await params;
 
@@ -51,6 +57,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 // DELETE /api/recipes/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectDB();
   const { id } = await params;
 

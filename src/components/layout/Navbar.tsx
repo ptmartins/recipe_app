@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChefHat, BookOpen, CalendarDays, Menu, X } from "lucide-react";
+import { ChefHat, BookOpen, CalendarDays, Menu, X, LogIn, LogOut, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/recipes", label: "Recipes", icon: BookOpen },
@@ -14,6 +16,8 @@ const links = [
 export function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,12 +50,48 @@ export function Navbar() {
                 {label}
               </Link>
             ))}
-            <Link
-              href="/recipes/new"
-              className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
-            >
-              + New Recipe
-            </Link>
+
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/recipes/new"
+                  className="ml-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  + New Recipe
+                </Link>
+                <div className="ml-2 flex items-center gap-2 pl-2 border-l border-border">
+                  <span className="text-sm text-muted-foreground max-w-[120px] truncate">
+                    {session.user?.name}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="ml-2 flex items-center gap-1">
+                <Link
+                  href="/auth/login"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign in
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Register
+                </Link>
+              </div>
+            )}
           </nav>
 
           {/* Mobile hamburger */}
@@ -91,13 +131,52 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
-              <Link
-                href="/recipes/new"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
-              >
-                + New Recipe
-              </Link>
+
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    href="/recipes/new"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors mt-1"
+                  >
+                    + New Recipe
+                  </Link>
+                  <div className="mt-2 pt-2 border-t border-border/40 flex items-center justify-between px-2">
+                    <span className="text-sm text-muted-foreground truncate max-w-[160px]">
+                      {session.user?.name}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-2 pt-2 border-t border-border/40 flex flex-col gap-1">
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Register
+                  </Link>
+                </div>
+              )}
             </nav>
           </motion.div>
         )}

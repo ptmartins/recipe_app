@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { connectDB } from "@/lib/mongodb";
 import Recipe from "@/models/Recipe";
 import type { IRecipe } from "@/types";
 import { RecipeForm } from "@/components/recipes/RecipeForm";
 import { Button } from "@/components/ui/button";
+import { auth } from "@/lib/auth";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -24,6 +25,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function EditRecipePage({ params }: PageProps) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
+
   const { id } = await params;
   await connectDB();
   const raw = await Recipe.findById(id).lean();

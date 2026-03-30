@@ -3,10 +3,16 @@ import { connectDB } from "@/lib/mongodb";
 import Recipe from "@/models/Recipe";
 import { uniqueSlug } from "@/lib/slugify";
 import { recipeSchema } from "@/lib/validations/recipe.schema";
+import { auth } from "@/lib/auth";
 
 // POST /api/recipes — create new recipe
 // Body is JSON (image already uploaded directly to Cloudinary from the browser)
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   await connectDB();
 
   try {
