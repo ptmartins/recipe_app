@@ -11,10 +11,12 @@ import { ChefHat, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
+  remember: z.boolean().default(false),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -26,10 +28,15 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: { remember: false },
   });
+
+  const remember = watch("remember");
 
   async function onSubmit(data: LoginFormData) {
     setServerError(null);
@@ -37,6 +44,7 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email: data.email,
       password: data.password,
+      remember: String(data.remember),
       redirect: false,
     });
 
@@ -104,6 +112,17 @@ export default function LoginPage() {
               {errors.password && (
                 <p className="text-xs text-destructive">{errors.password.message}</p>
               )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="remember"
+                checked={remember}
+                onCheckedChange={(checked) => setValue("remember", !!checked)}
+              />
+              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
+                Keep me logged in
+              </Label>
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>

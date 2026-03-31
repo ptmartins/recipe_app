@@ -17,6 +17,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        remember: { label: "Remember me", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -42,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: String(user._id),
           name: user.name,
           email: user.email,
+          remember: credentials.remember === "true",
         };
       },
     }),
@@ -52,6 +54,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
+        // 30 days if remembered, 1 day otherwise
+        const maxAge = (user as { remember?: boolean }).remember
+          ? 60 * 60 * 24 * 30
+          : 60 * 60 * 24;
+        token.exp = Math.floor(Date.now() / 1000) + maxAge;
       }
       return token;
     },
