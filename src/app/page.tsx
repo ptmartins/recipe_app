@@ -46,7 +46,7 @@ export default async function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-background to-amber-50/30 border-b">
+      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-background to-amber-50/30 dark:from-orange-950/40 dark:via-background dark:to-amber-950/20 border-b">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">

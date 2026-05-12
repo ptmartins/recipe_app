@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChefHat, BookOpen, CalendarDays, Menu, X, LogIn, LogOut, UserPlus } from "lucide-react";
+import { ChefHat, BookOpen, CalendarDays, Menu, X, LogIn, LogOut, UserPlus, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 const links = [
@@ -18,6 +19,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const { data: session, status } = useSession();
   const isLoggedIn = status === "authenticated";
+  const { resolvedTheme, setTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -93,6 +95,15 @@ export function Navbar() {
               </div>
             )}
           </nav>
+
+          {/* Theme toggle */}
+          <button
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            className="flex items-center justify-center h-9 w-9 rounded-xl border border-border hover:bg-muted transition-colors"
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
 
           {/* Mobile hamburger */}
           <button
