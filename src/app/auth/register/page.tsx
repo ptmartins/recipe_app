@@ -78,7 +78,7 @@ export default function RegisterPage() {
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-display font-bold">Create an account</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Join Savori and start building your recipe collection
+              Join Super Chef and start building your recipe collection
             </p>
           </div>
 

@@ -60,7 +60,7 @@ export default async function Home() {
               plan with ease.
             </h1>
             <p className="mt-6 text-xl text-muted-foreground max-w-xl">
-              Savori helps you build your recipe collection, generate smart meal plans,
+              Super Chef helps you build your recipe collection, generate smart meal plans,
               and create shopping lists — all in one beautiful place.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
@@ -90,7 +90,7 @@ export default async function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-display font-bold">Everything you need to eat well</h2>
             <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-              From recipe creation to weekly meal plans, Savori has all the tools for a delicious life.
+              From recipe creation to weekly meal plans, Super Chef has all the tools for a delicious life.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -152,7 +152,7 @@ export default async function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-display font-bold">Start your culinary journey</h2>
           <p className="mt-4 text-primary-foreground/80 max-w-md mx-auto">
-            Add your first recipe and let Savori handle the rest.
+            Add your first recipe and let Super Chef handle the rest.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Button asChild size="lg" variant="secondary" className="shadow">

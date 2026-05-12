@@ -6,11 +6,11 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 
 export const metadata: Metadata = {
   title: {
-    default: "Savori — Recipe & Menu Planner",
-    template: "%s | Savori",
+    default: "Super Chef — Recipe & Menu Planner",
+    template: "%s | Super Chef",
   },
   description:
-    "Discover, save and plan your meals with Savori. Create weekly, bi-weekly and monthly menus from your personal recipe collection.",
+    "Discover, save and plan your meals with Super Chef. Create weekly, bi-weekly and monthly menus from your personal recipe collection.",
   keywords: ["recipes", "meal planning", "menu planner", "cooking", "food"],
 };
 
@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <footer className="border-t py-6 mt-auto">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <p className="text-center text-sm text-muted-foreground">
-                © {new Date().getFullYear()} Savori. Crafted with love for food lovers.
+                © {new Date().getFullYear()} Super Chef. Crafted with love for food lovers.
               </p>
             </div>
           </footer>

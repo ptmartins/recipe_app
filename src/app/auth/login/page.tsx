@@ -71,7 +71,7 @@ export default function LoginPage() {
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-display font-bold">Welcome back</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Sign in to your Savori account
+              Sign in to your Super Chef account
             </p>
           </div>
 

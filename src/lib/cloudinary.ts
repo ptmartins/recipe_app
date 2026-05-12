@@ -8,7 +8,7 @@ cloudinary.config({
 
 export default cloudinary;
 
-export async function uploadImage(buffer: Buffer, folder = "savori/recipes"): Promise<{ url: string; publicId: string }> {
+export async function uploadImage(buffer: Buffer, folder = "super-chef/recipes"): Promise<{ url: string; publicId: string }> {
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(

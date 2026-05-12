@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     const timestamp = Math.round(Date.now() / 1000);
-    const folder = "savori/recipes";
+    const folder = "super-chef/recipes";
 
     const signature = cloudinary.utils.api_sign_request(
       { timestamp, folder, transformation: "c_fill,w_1200,h_800,g_auto/f_auto,q_auto" },
